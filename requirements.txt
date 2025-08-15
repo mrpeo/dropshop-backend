@@ -1,0 +1,39 @@
+# --- Core Framework ---
+fastapi==0.111.0
+# ASGI server để chạy ứng dụng FastAPI
+uvicorn[standard]==0.29.0
+
+
+# --- Database ---
+# ORM để làm việc với cơ sở dữ liệu
+sqlalchemy==2.0.30
+# Driver để kết nối Python với PostgreSQL
+psycopg2-binary==2.9.9
+
+
+# --- Database Migration ---
+alembic==1.13.1
+
+# --- Data Validation & Settings ---
+# Thư viện validation dữ liệu, là cốt lõi của FastAPI
+pydantic==2.7.1
+# Quản lý các biến môi trường và cấu hình một cách hiệu quả
+pydantic-settings==2.2.1
+
+
+# --- Security & Authentication ---
+# Thư viện để hash và xác thực mật khẩu (sử dụng bcrypt)
+passlib[bcrypt]==1.7.4
+# Thư viện để tạo và xác thực JSON Web Tokens (JWT) cho API
+python-jose[cryptography]==3.3.0
+# Cần thiết để FastAPI xử lý form data (dùng cho luồng đăng nhập OAuth2)
+python-multipart==0.0.9
+
+
+# --- Utilities ---
+# Tự động tạo "slug" từ tiêu đề bài viết, sản phẩm
+python-slugify==8.0.4
+# Đọc các biến cấu hình từ file .env
+python-dotenv==1.0.1
+# Async file operations
+aiofiles==24.1.0

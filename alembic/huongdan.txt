@@ -1,0 +1,172 @@
+Chính xác! Bạn đã chỉ ra đúng trọng tâm của vấn đề. Lỗi relation "users" does not exist có nghĩa là code của chúng ta đang cố gắng truy vấn một bảng tên là users, nhưng bảng đó chưa hề tồn tại trong cơ sở dữ liệu PostgreSQL.
+
+Chúng ta đã định nghĩa các Models (khuôn mẫu) trong Python, nhưng chúng ta chưa thực hiện bước "thi công" (tạo các bảng thực tế trong DB) từ những khuôn mẫu đó.
+
+Sử dụng migration là giải pháp chuyên nghiệp và đúng đắn nhất. Nó không chỉ giúp tạo database lần đầu mà còn giúp quản lý tất cả các thay đổi về cấu trúc database sau này (thêm cột, xóa bảng, đổi tên...). Công cụ tiêu chuẩn cho SQLAlchemy là Alembic.
+
+Hãy cùng nhau cài đặt và thực hiện migration đầu tiên.
+
+Bước 1: Cài đặt Alembic
+
+Mở terminal của bạn (đảm bảo đã kích hoạt môi trường ảo) và chạy lệnh:
+
+code
+Bash
+download
+content_copy
+expand_less
+
+pip install alembic```
+
+Sau khi cài đặt, hãy thêm `alembic` vào file `requirements.txt` của bạn.
+
+---
+
+### **Bước 2: Khởi tạo môi trường Alembic**
+
+Trong thư mục gốc của dự án (cùng cấp với thư mục `app`), chạy lệnh sau:
+
+```bash
+alembic init alembic
+
+Lệnh này sẽ tạo ra:
+
+Một thư mục alembic/.
+
+Bên trong có thư mục versions/ để chứa các file migration.
+
+File cấu hình alembic.ini ở thư mục gốc.
+
+Bước 3: Cấu hình Alembic
+
+Đây là bước quan trọng nhất. Chúng ta cần "dạy" cho Alembic cách kết nối đến database và nơi tìm các model SQLAlchemy của chúng ta.
+
+3.1. Sửa file alembic.ini
+
+Mở file alembic.ini và tìm đến dòng sqlalchemy.url. Hãy thay đổi nó để trỏ đến database của bạn. Bạn có thể sao chép giá trị từ file .env.
+
+code
+Ini
+download
+content_copy
+expand_less
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+# alembic.ini
+
+# ... (các dòng khác giữ nguyên) ...
+
+# A SCRIPT TO LOAD THE CONFIGURATION AND ENVIRONMENT IS AT:
+#
+#   alembic/env.py
+#
+# THIS FILE IS JUST A PLAIN OLD INI FILE WHICH IS READ BY THE SCRIPT.
+#
+[alembic]
+# ...
+
+# sqlalchemy.url = driver://user:pass@localhost/dbname
+# SỬA DÒNG NÀY:
+sqlalchemy.url = postgresql://your_user:your_password@your_host:5432/affiliate_db
+
+# ... (các dòng khác giữ nguyên) ...
+
+Lưu ý: Thay thế bằng chuỗi kết nối thực tế của bạn.
+
+3.2. Sửa file alembic/env.py
+
+Đây là nơi chúng ta kết nối Alembic với các model của ứng dụng. Mở file alembic/env.py và thực hiện 2 thay đổi chính:
+
+Import Base từ model của bạn: Tìm đến dòng target_metadata = None và thay đổi nó.
+
+Thêm đường dẫn dự án: Để env.py có thể tìm thấy thư mục app.
+
+code
+Python
+download
+content_copy
+expand_less
+IGNORE_WHEN_COPYING_START
+IGNORE_WHEN_COPYING_END
+# alembic/env.py
+
+import os
+import sys
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+# === THAY ĐỔI 1: THÊM CÁC DÒNG NÀY VÀO ĐẦU ===
+# Thêm đường dẫn gốc của dự án vào sys.path
+# để Alembic có thể tìm thấy module 'app'
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.db.base import Base # Import Base từ file tổng hợp các models
+from app.core.config import settings # Import settings để lấy DB URL nếu cần
+
+# ===============================================
+
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+
+# === THAY ĐỔI 2: SỬA DÒNG target_metadata ===
+target_metadata = Base.metadata
+# ==========================================
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def run_migrations_offline() -> None:
+    # ... (giữ nguyên) ...
+
+def run_migrations_online() -> None:
+    # ... (giữ nguyên) ...
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+Bước 4: Tạo file Migration đầu tiên
+
+Bây giờ, hãy yêu cầu Alembic so sánh các models bạn đã định nghĩa trong code với trạng thái hiện tại của database (đang trống trơn) và tự động tạo ra một script migration.
+
+Chạy lệnh sau trong terminal:
+alembic revision --autogenerate -m "Create initial tables for users and shops"
+
+revision --autogenerate: Yêu cầu tự động tạo file revision.
+
+-m "...": Một thông điệp mô tả cho migration này.
+
+Nếu mọi thứ thành công, Alembic sẽ tạo một file mới trong thư mục alembic/versions/ có tên dạng xxxx_create_initial_tables...py. Mở file đó ra, bạn sẽ thấy code Python định nghĩa các hàm upgrade() (để tạo bảng) và downgrade() (để xóa bảng).
+
+Bước 5: Áp dụng Migration vào Database
+
+File script đã được tạo, nhưng các bảng vẫn chưa có trong DB. Để thực thi script đó, hãy chạy lệnh cuối cùng:
+
+Bash
+alembic upgrade head
+
+Lệnh này sẽ lấy file migration mới nhất (head) và chạy hàm upgrade() của nó, thực hiện các lệnh CREATE TABLE vào database của bạn.
+
+Xong!
+
+Bây giờ, bạn có thể kiểm tra PostgreSQL bằng một công cụ như DBeaver, pgAdmin hoặc command line, bạn sẽ thấy các bảng users, shops và một bảng đặc biệt là alembic_version đã được tạo. Bảng alembic_version được Alembic dùng để theo dõi phiên bản migration nào đã được áp dụng.
